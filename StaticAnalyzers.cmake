@@ -4,6 +4,7 @@ option(ENABLE_CPPCHECK "Enable static analysis with cppcheck" OFF)
 option(ENABLE_CLANG_TIDY "Enable static analysis with clang-tidy" OFF)
 option(ENABLE_INCLUDE_WHAT_YOU_USE "Enable static analysis with include-what-you-use" OFF)
 
+
 # ----------------------------------------------
 # CPPCHECK
 # ----------------------------------------------
@@ -27,12 +28,29 @@ if(ENABLE_CPPCHECK)
 endif()
 
 # ----------------------------------------------
+# CLANG_FORMAT
+# ----------------------------------------------
+file(GLOB_RECURSE
+     ALL_CXX_SOURCE_FILES
+     *.[chi]pp *.[chi]xx *.cc *.hh *.ii *.[CHI]
+     )
+find_program(CLANG_FORMAT "clang-format")
+if(CLANG_FORMAT)
+  add_custom_target(clang-format
+    COMMAND /usr/bin/clang-format
+    -i
+    -style=file
+    ${ALL_CXX_SOURCE_FILES}
+    )
+endif()
+
+# ----------------------------------------------
 # CLANG_TIDY
 # ----------------------------------------------
 if(ENABLE_CLANG_TIDY)
   find_program(CLANGTIDY clang-tidy REQUIRED)
   if(CLANGTIDY)
-    set(CMAKE_CXX_CLANG_TIDY ${CLANGTIDY} -extra-arg=-Wno-unknown-warning-option)
+    set(${CLANGTIDY} -checks=*;)
     if(WARNINGS_AS_ERRORS)
       list(APPEND CMAKE_CXX_CLANG_TIDY -warnings-as-errors=*)
     endif()
