@@ -18,6 +18,11 @@ function(add_git_versioning TARGET_NAME)
 
     file(MAKE_DIRECTORY "${GENERATED_DIR}")
 
+    configure_file(
+        ${GENERATED_HEADER}
+        "${GENERATED_DIR}/version.hpp"
+    )
+
     add_custom_command(
         OUTPUT ${GENERATED_HEADER}
 
@@ -42,6 +47,7 @@ function(add_git_versioning TARGET_NAME)
     )
 
     add_library(${TARGET_NAME} INTERFACE)
+    add_library(${TARGET_NAME}::Version ALIAS ${TARGET_NAME})
 
     target_include_directories(${TARGET_NAME} INTERFACE
         "${OUTPUT_DIR}"

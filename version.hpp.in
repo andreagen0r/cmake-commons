@@ -1,42 +1,12 @@
 #pragma once
 
-#include <QString>
-#include <QStringView>
+#include <string_view>
 
-namespace build
-{
+namespace Version {
 
-inline constexpr auto project_version = "@PROJECT_VERSION@";
+    constexpr std::string_view GIT_HASH = "@GIT_HASH@";
+    constexpr std::string_view GIT_BRANCH = "@GIT_BRANCH@";
+    constexpr std::string_view GIT_TAG = "@GIT_TAG@";
+    constexpr std::string_view GIT_DATE = "@GIT_DATE@";
 
-inline constexpr auto git_hash =
-    "@GIT_HASH@";
-
-inline constexpr auto git_hash_short =
-    "@GIT_HASH_SHORT@";
-
-inline constexpr auto git_branch =
-    "@GIT_BRANCH@";
-
-inline constexpr auto git_tag =
-    "@GIT_TAG@";
-
-inline constexpr bool git_dirty =
-    @GIT_DIRTY@;
-
-inline constexpr auto build_time =
-    "@BUILD_TIME@";
-
-
-inline QString versionString()
-{
-    QString v = QString("%1 (%2)")
-        .arg(project_version)
-        .arg(git_hash_short);
-
-    if (git_dirty)
-        v += " *dirty*";
-
-    return v;
-}
-
-}
+} // namespace Version
