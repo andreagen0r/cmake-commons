@@ -1,0 +1,47 @@
+execute_process(
+    COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
+    WORKING_DIRECTORY ${SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+execute_process(
+    COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+    WORKING_DIRECTORY ${SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_HASH_SHORT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+execute_process(
+    COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+    WORKING_DIRECTORY ${SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_BRANCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+execute_process(
+    COMMAND ${GIT_EXECUTABLE} describe --tags --always
+    WORKING_DIRECTORY ${SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_TAG
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+execute_process(
+    COMMAND ${GIT_EXECUTABLE} status --porcelain
+    WORKING_DIRECTORY ${SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_STATUS
+)
+
+if(GIT_STATUS STREQUAL "")
+    set(GIT_DIRTY false)
+else()
+    set(GIT_DIRTY true)
+endif()
+
+string(TIMESTAMP BUILD_TIME "%Y-%m-%d %H:%M:%S UTC" UTC)
+
+configure_file(
+    ${TEMPLATE_FILE}
+    ${OUTPUT_FILE}
+    @ONLY
+)

@@ -1,0 +1,42 @@
+#pragma once
+
+#include <QString>
+#include <QStringView>
+
+namespace build
+{
+
+inline constexpr auto project_version = "@PROJECT_VERSION@";
+
+inline constexpr auto git_hash =
+    "@GIT_HASH@";
+
+inline constexpr auto git_hash_short =
+    "@GIT_HASH_SHORT@";
+
+inline constexpr auto git_branch =
+    "@GIT_BRANCH@";
+
+inline constexpr auto git_tag =
+    "@GIT_TAG@";
+
+inline constexpr bool git_dirty =
+    @GIT_DIRTY@;
+
+inline constexpr auto build_time =
+    "@BUILD_TIME@";
+
+
+inline QString versionString()
+{
+    QString v = QString("%1 (%2)")
+        .arg(project_version)
+        .arg(git_hash_short);
+
+    if (git_dirty)
+        v += " *dirty*";
+
+    return v;
+}
+
+}

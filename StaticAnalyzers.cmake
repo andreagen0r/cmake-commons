@@ -1,72 +1,81 @@
-include_guard()
+include_guard(GLOBAL)
 
-option(ENABLE_CPPCHECK "Enable static analysis with cppcheck" OFF)
-option(ENABLE_CLANG_TIDY "Enable static analysis with clang-tidy" OFF)
-option(ENABLE_INCLUDE_WHAT_YOU_USE "Enable static analysis with include-what-you-use" OFF)
-
-
-# ----------------------------------------------
-# CPPCHECK
-# ----------------------------------------------
-if(ENABLE_CPPCHECK)
-  find_program(CPPCHECK cppcheck REQUIRED)
-  if(CPPCHECK)
-  # cppcheck --project=compile_commands.json --enable=all 
-  # --inconclusive --xml --xml-version=2 --output-file=../cppcheck.xml
-    set(CMAKE_CXX_CPPCHECK
-        ${CPPCHECK}
-        --suppress=missingInclude
-        --enable=all
-        --inline-suppr
-        --inconclusive)
-    if(WARNINGS_AS_ERRORS)
-      list(APPEND CMAKE_CXX_CPPCHECK --error-exitcode=2)
+function(enable_static_analysis TARGET_NAME)
+    # ----------------------------------------------
+    # CLANG-TIDY (Integrado à compilação)
+    # ----------------------------------------------
+    if(ENABLE_CLANG_TIDY)
+        find_program(CLANG_TIDY_PROGRAM NAMES clang-tidy)
+        if(CLANG_TIDY_PROGRAM)
+            # Constrói o comando: clang-tidy; -p; build_dir
+            set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_PROGRAM};-p;${CMAKE_BINARY_DIR}")
+            
+            # Aplica ao target. O CMake roda o tidy automaticamente ao compilar cada arquivo.
+            set_target_properties(${TARGET_NAME} PROPERTIES CXX_CLANG_TIDY "${CMAKE_CXX_CLANG_TIDY}")
+            message(STATUS "Clang-Tidy enabled for ${TARGET_NAME}")
+        else()
+            message(WARNING "Clang-Tidy requested but not found.")
+        endif()
     endif()
-  else()
-    message(SEND_ERROR "cppcheck requested but executable not found")
-  endif()
-endif()
+
+    # ----------------------------------------------
+    # CPPCHECK (Integrado à compilação)
+    # ----------------------------------------------
+    if(ENABLE_CPPCHECK)
+        find_program(CPPCHECK_PROGRAM NAMES cppcheck)
+        if(CPPCHECK_PROGRAM)
+            set(CMAKE_CXX_CPPCHECK 
+                "${CPPCHECK_PROGRAM}"
+                "--enable=warning,style,performance,portability,information,unusedFunction"
+                "--inconclusive"
+                "--suppress=missingInclude" # Otimização: ignora includes de sistema
+                "--template=gcc"
+                "--library=qt"
+                "--xml"
+                "--xml-version=2"
+                "--output-file=cppcheck.xml"
+            )
+            set_target_properties(${TARGET_NAME} PROPERTIES CXX_CPPCHECK "${CMAKE_CXX_CPPCHECK}")
+            message(STATUS "Cppcheck enabled for ${TARGET_NAME}")
+        endif()
+    endif()
+
+    # ----------------------------------------------
+    # IWYU
+    # ----------------------------------------------
+    if(ENABLE_INCLUDE_WHAT_YOU_USE)
+        find_program(IWYU_PROGRAM NAMES include-what-you-use iwyu)
+        if(IWYU_PROGRAM)
+            set_target_properties(${TARGET_NAME} PROPERTIES CXX_INCLUDE_WHAT_YOU_USE "${IWYU_PROGRAM}")
+        endif()
+    endif()
+
+endfunction()
+
 
 # ----------------------------------------------
 # CLANG_FORMAT
 # ----------------------------------------------
-file(GLOB_RECURSE
-     ALL_CXX_SOURCE_FILES
-     *.[chi]pp *.[chi]xx *.cc *.hh *.ii *.[CHI]
-     )
-find_program(CLANG_FORMAT "clang-format")
-if(CLANG_FORMAT)
-  add_custom_target(clang-format
-    COMMAND /usr/bin/clang-format
-    -i
-    -style=file
-    ${ALL_CXX_SOURCE_FILES}
+if(ENABLE_CLANG_FORMAT)
+
+  find_program(CLANG_FORMAT_EXECUTABLE
+    NAMES clang-format
+    HINTS ${LLVM_TOOLS_BINARY_DIR}
+  )
+
+  if(CLANG_FORMAT_EXECUTABLE)
+
+    add_custom_target(clang-format
+      COMMAND ${CLANG_FORMAT_EXECUTABLE}
+      -i
+      -style=file
+      ${ALL_CXX_SOURCE_FILES}
+      COMMENT "Running clang-format on ${CMAKE_SOURCE_DIR}"
+      VERBATIM
     )
-endif()
 
-# ----------------------------------------------
-# CLANG_TIDY
-# ----------------------------------------------
-if(ENABLE_CLANG_TIDY)
-  find_program(CLANGTIDY clang-tidy REQUIRED)
-  if(CLANGTIDY)
-    set(${CLANGTIDY} -checks=*;)
-    if(WARNINGS_AS_ERRORS)
-      list(APPEND CMAKE_CXX_CLANG_TIDY -warnings-as-errors=*)
-    endif()
   else()
-    message(SEND_ERROR "clang-tidy requested but executable not found")
+    message(WARNING "clang-format not found! Formatting disabled.")
   endif()
-endif()
 
-# ----------------------------------------------
-# IWYU
-# ----------------------------------------------
-if(ENABLE_INCLUDE_WHAT_YOU_USE)
-  find_program(INCLUDE_WHAT_YOU_USE include-what-you-use REQUIRED)
-  if(INCLUDE_WHAT_YOU_USE)
-    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE ${INCLUDE_WHAT_YOU_USE})
-  else()
-    message(SEND_ERROR "include-what-you-use requested but executable not found")
-  endif()
 endif()
